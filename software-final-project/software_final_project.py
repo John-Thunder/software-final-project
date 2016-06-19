@@ -11,8 +11,10 @@ import json
 import copy
 import sys
 import re
+import pygeoip
+import json
+import csv
 from tqdm import tqdm
-
 
 def mac_addr(address):
     return ':'.join('%02x' % ord(b) for b in address)
@@ -20,23 +22,43 @@ def mac_addr(address):
 
 def ip_to_str(address):
     return socket.inet_ntop(socket.AF_INET, address)
+
+def check_protocols(port_num):
+    __result={}
+
+    return __result
+
 def task_status(task_id):
+    __result={}
     with open('task/'+str(task_id)+'.txt', 'rb') as f:
         line=f.readlines()[-1].decode()
-        progress= re.findall('[0-9]{1,3}\%', line)
-        speed=re.findall('\d+\.\d+it\/s',line)
+        __result['progress']= re.findall('[0-9]{1,3}\%', line)[-1]
+        __result['speed']=re.findall('\d+\.\d+it\/s',line)[-1]
         get_time=re.split('\<',re.findall('\d+\:\d+<\d+\:\d+',line)[-1])
-        running_time=get_time[0]
-        remaining_time=get_time[1]
-        return progress[-1],running_time,remaining_time,speed[-1]
+        __result['running_time']=get_time[0]
+        __result['remaining_time']=get_time[1]
+        return __result
 
-def print_packets(task_id,pcap):
-    """Print out information about each packet in a pcap
+def geo_location(name,addr):
+    __result={}
+    gi = pygeoip.GeoIP('Geo/GeoLiteCity.dat')
+    __data=gi.record_by_addr(addr)
+    if __data!=None:
+        __result[name+'_city']=__data['city']
+        __result[name+'_country_code']=__data['country_code']
+        __result[name+'_latitude']=__data['latitude']
+        __result[name+'_longitude']=__data['longitude']
+    else:
+        __result[name+'_city']=''
+        __result[name+'_country_code']=''
+        __result[name+'_latitude']=''
+        __result[name+'_longitude']=''
+    return __result
 
-       Args:
-           pcap: dpkt pcap reader object (dpkt.pcap.Reader)
-    """
-    data=[]
+def analyze_packets(task_id,pcap):
+    __data=[]
+    tcp_map,udp_map=gen_services_map()
+
     sys.stdout = open('task/'+str(task_id)+'.txt', 'w')
     # For each packet in the pcap process the contents
     for timestamp, buf in tqdm(pcap,file=sys.stdout,mininterval=1):
@@ -66,18 +88,47 @@ def print_packets(task_id,pcap):
         # Print out the info
         #print 'IP: %s -> %s \n' % \
         #      (ip_to_str(ip.src), ip_to_str(ip.dst))
-        data.append( {"time":Timestamp,"src_ip":ip_to_str(ip.src),"dst_ip":ip_to_str(ip.dst)})
-        
-    return  data
+        packet_info={"time":Timestamp,"src_ip":ip_to_str(ip.src),"dst_ip":ip_to_str(ip.dst)}
+        if ip.p==17 and ip.data.dport in udp_map:
+            packet_info.update({"protocols":udp_map[ip.data.dport],"sport":ip.data.sport,"dport":ip.data.dport})
+        elif ip.p==17 and ip.data.dport not in udp_map:
+            packet_info.update({"protocols":"unknown","sport":ip.data.sport,"dport":ip.data.dport})
+        elif ip.p==1:
+            packet_info.update({"protocols":"icmp"})
+        elif (ip.data.flags & dpkt.tcp.TH_SYN ==1 ) and (ip.data.flags & dpkt.tcp.TH_ACK ==0) and ip.p==6 and ip.data.dport in tcp_map:
+           packet_info.update({"protocols":tcp_map[ip.data.dport],"sport":ip.data.sport,"dport":ip.data.dport})
+        else:
+            packet_info.update({"protocols":"unknown","sport":ip.data.sport,"dport":ip.data.dport})
+        packet_info.update(geo_location('src',ip_to_str(ip.src)))
+        packet_info.update(geo_location('dst',ip_to_str(ip.dst)))
+
+        __data.append(packet_info)
+    sys.stdout=sys.__stdout__
+    return  json.dumps(__data)
 
         
 def test():
     """Open up a test pcap file and print out the packets"""
-    task_status(1)
-    #with open('data/example.pcap', 'rb') as f:
-    #    pcap = dpkt.pcap.Reader(f).readpkts()
-    #    data=print_packets(1,pcap)
     
+    with open('data/example.pcap', 'rb') as f:
+        pcap = dpkt.pcap.Reader(f).readpkts()
+        data=analyze_packets(1,pcap)
+    #print task_status(1)
+    with open('data/test.txt', 'w') as f:
+        f.write(data)
+    
+    
+def gen_services_map():
+    tcp_map={}
+    udp_map={}
+    f = open('data/services_map.csv', 'r')
+    for row in csv.DictReader(f):
+         if row['Transport Protocol']=='tcp':
+             tcp_map[row['Port Number']]=row['Service Name']
+         elif  row['Transport Protocol']=='udp':
+             udp_map[row['Port Number']]=row['Service Name']
+    return  tcp_map,udp_map
 
 if __name__ == '__main__':
+
     test()

@@ -12,7 +12,7 @@
     <OutputPath>.</OutputPath>
     <Name>software-final-project</Name>
     <RootNamespace>software-final-project</RootNamespace>
-    <InterpreterId>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</InterpreterId>
+    <InterpreterId>{ff521fab-c0b6-4c6f-abb1-94d92d9053f9}</InterpreterId>
     <InterpreterVersion>2.7</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">

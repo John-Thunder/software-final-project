@@ -1,0 +1,4 @@
+struct
+inet_ntop
+socket
+inet_pton
