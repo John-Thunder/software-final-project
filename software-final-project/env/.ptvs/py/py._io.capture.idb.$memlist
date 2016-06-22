@@ -1,0 +1,16 @@
+sys
+py
+BytesIO
+FDCapture
+os
+EncodedFile
+StringIO
+StdCaptureFD
+StdCapture
+devnullpath
+patchsysdict
+DontReadFromInput
+dupfile
+tempfile
+Capture
+TextIO

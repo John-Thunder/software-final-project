@@ -1,0 +1,7 @@
+os
+_winerrnomap
+sys
+error
+errno
+Error
+ErrorMaker

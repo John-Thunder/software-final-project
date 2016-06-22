@@ -1,0 +1,9 @@
+os
+initpkg
+_py_abspath
+ModuleType
+AliasModule
+ApiModule
+sys
+importobj
+__version__

@@ -1,0 +1,16 @@
+sys
+Syslog
+py
+default_consumer
+_prio
+default_keywordmapper
+setconsumer
+File
+STDERR
+setstate
+Producer
+KeywordMapper
+STDOUT
+getstate
+Path
+Message

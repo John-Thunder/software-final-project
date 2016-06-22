@@ -1,0 +1,12 @@
+PY26
+PY33
+text_type
+PY3
+reraise
+PY34
+integer_types
+BYTES_TYPES
+string_types
+bytes_type
+sys
+flatten_bytes

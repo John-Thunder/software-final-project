@@ -1,9 +1,0 @@
-not_windows
-ctypes
-os
-socket
-inet_pton
-sockaddr
-inet_ntop
-WSAAddressToStringA
-WSAStringToAddressA

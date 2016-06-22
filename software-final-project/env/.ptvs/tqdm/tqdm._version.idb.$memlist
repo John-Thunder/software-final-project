@@ -1,8 +1,0 @@
-_sh
-__all__
-version_info
-commit_hash
-last_release
-STDOUT
-cur_hash
-__version__
